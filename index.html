@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>トラッキングURL管理</title>
+  <title>トラッキングURL管理 (本番連携版)</title>
   <style>
+    /* デザインは維持しつつ使いやすく調整 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -12,16 +13,8 @@
       min-height: 100vh;
       padding: 20px;
     }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    h1 {
-      color: white;
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 32px;
-    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 32px; }
     .card {
       background: white;
       border-radius: 12px;
@@ -29,115 +22,30 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.2);
       margin-bottom: 30px;
     }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #333;
-    }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
     input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 16px;
-      transition: border 0.3s;
+      width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; transition: border 0.3s;
     }
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #667eea;
-    }
+    input[type="text"]:focus { outline: none; border-color: #667eea; }
     .btn {
-      background: #667eea;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.3s;
+      background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;
     }
-    .btn:hover {
-      background: #5568d3;
-    }
-    .url-result {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 20px;
-      display: none;
-    }
-    .url-result.show {
-      display: block;
-    }
-    .url-text {
-      background: white;
-      padding: 12px;
-      border-radius: 6px;
-      word-break: break-all;
-      font-family: monospace;
-      margin: 10px 0;
-    }
-    .copy-btn {
-      background: #28a745;
-      padding: 8px 16px;
-      font-size: 14px;
-    }
-    .copy-btn:hover {
-      background: #218838;
-    }
-    .company-list {
-      margin-top: 20px;
-    }
+    .btn:hover { background: #5568d3; }
+    .url-result { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; display: none; }
+    .url-result.show { display: block; }
+    .url-text { background: white; padding: 12px; border-radius: 6px; word-break: break-all; font-family: monospace; margin: 10px 0; border: 1px solid #ddd; }
+    .copy-btn { background: #28a745; margin-top: 10px; }
     .company-item {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #667eea;
     }
-    .company-name {
-      font-weight: 600;
-      color: #333;
-    }
-    .count-badge {
-      background: #667eea;
-      color: white;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 18px;
-    }
-    .settings {
-      background: #fff3cd;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .settings h3 {
-      margin-bottom: 10px;
-      color: #856404;
-    }
-    .refresh-btn {
-      background: #17a2b8;
-    }
-    .refresh-btn:hover {
-      background: #138496;
-    }
-    .note {
-      background: #e7f3ff;
-      padding: 12px;
-      border-radius: 6px;
-      margin-top: 15px;
-      color: #004085;
-      font-size: 14px;
-    }
+    .company-name { font-weight: 600; color: #333; }
+    .count-badge { background: #667eea; color: white; padding: 6px 16px; border-radius: 20px; font-weight: 600; font-size: 18px; }
+    .settings { background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffeeba; }
+    .settings h3 { margin-bottom: 10px; color: #856404; font-size: 16px; }
+    .refresh-btn { background: #17a2b8; margin-bottom: 15px; }
+    .note { background: #e7f3ff; padding: 12px; border-radius: 6px; margin-top: 15px; color: #004085; font-size: 13px; line-height: 1.5; }
+    .delete-btn { background: #dc3545; padding: 5px 10px; font-size: 12px; margin-left: 10px; }
   </style>
 </head>
 <body>
@@ -146,38 +54,33 @@
     
     <div class="card">
       <div class="settings">
-        <h3>⚙️ 設定</h3>
-        <label>Worker URL:</label>
-        <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev" value="">
+        <h3>⚙️ Worker接続設定</h3>
+        <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev" style="margin-bottom:10px;">
         <button class="btn" onclick="saveSettings()">設定を保存</button>
       </div>
 
       <h2>新規URL生成</h2>
       <div class="form-group">
-        <label>会社名 / ID:</label>
-        <input type="text" id="companyName" placeholder="例: 株式会社サンプル">
+        <label>会社名 / 管理ID:</label>
+        <input type="text" id="companyName" placeholder="例: 株式会社A">
       </div>
-      <button class="btn" onclick="generateUrl()">URLを生成</button>
+      <button class="btn" onclick="generateUrl()">URLを発行する</button>
       
       <div class="url-result" id="urlResult">
-        <label>生成されたトラッキングURL:</label>
+        <label>配信用URL:</label>
         <div class="url-text" id="generatedUrl"></div>
         <button class="btn copy-btn" onclick="copyUrl()">URLをコピー</button>
         <div class="note">
-          💡 このURLを会社に送ると、クリックされるたびにカウントが増えます。<br>
-          下の「登録済み会社」リストに自動で追加されます。
+          💡 このURLを相手に送ってください。クリックされると認証画面が表示され、カウントが1増えます。
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>登録済み会社</h2>
-      <button class="btn refresh-btn" onclick="loadCompanies()">🔄 カウントを更新</button>
+      <h2>集計レポート</h2>
+      <button class="btn refresh-btn" onclick="loadCompanies()">🔄 最新のカウントを取得</button>
       <div class="company-list" id="companyList">
-        <p style="text-align: center; color: #999; padding: 20px;">
-          URLを生成して使用すると、ここに表示されます
-        </p>
-      </div>
+        </div>
     </div>
   </div>
 
@@ -185,108 +88,110 @@
     let settings = { workerUrl: '' };
     let companies = [];
 
-    // 設定を読み込み
-    function loadSettings() {
-      const saved = localStorage.getItem('kvTrackingSettings');
-      if (saved) {
-        settings = JSON.parse(saved);
+    // 初期化：保存された設定を読み込む
+    function init() {
+      const savedSettings = localStorage.getItem('track_settings');
+      if (savedSettings) {
+        settings = JSON.parse(savedSettings);
         document.getElementById('workerUrl').value = settings.workerUrl;
       }
-      
-      const savedCompanies = localStorage.getItem('kvTrackingCompanies');
+      const savedCompanies = localStorage.getItem('track_companies');
       if (savedCompanies) {
         companies = JSON.parse(savedCompanies);
         displayCompanies();
       }
     }
 
-    // 設定を保存
+    // 設定をブラウザに保存
     function saveSettings() {
-      settings.workerUrl = document.getElementById('workerUrl').value.trim();
-      if (!settings.workerUrl) {
-        alert('Worker URLを入力してください');
-        return;
-      }
-      localStorage.setItem('kvTrackingSettings', JSON.stringify(settings));
-      alert('設定を保存しました!');
+      let url = document.getElementById('workerUrl').value.trim();
+      if (!url) return alert('WorkerのURLを入力してください');
+      if (url.endsWith('/')) url = url.slice(0, -1); // 末尾のスラッシュを削除
+      settings.workerUrl = url;
+      localStorage.setItem('track_settings', JSON.stringify(settings));
+      alert('接続設定を保存しました');
     }
 
-    // URL生成
+    // URLを生成してリストに追加
     function generateUrl() {
-      const companyName = document.getElementById('companyName').value.trim();
-      if (!companyName) {
-        alert('会社名を入力してください');
-        return;
-      }
-      if (!settings.workerUrl) {
-        alert('先に設定を保存してください');
-        return;
-      }
+      const name = document.getElementById('companyName').value.trim();
+      if (!name) return alert('会社名を入力してください');
+      if (!settings.workerUrl) return alert('先にWorkerの接続設定を行ってください');
 
-      const url = `${settings.workerUrl}?id=${encodeURIComponent(companyName)}`;
-      document.getElementById('generatedUrl').textContent = url;
+      const encodedName = encodeURIComponent(name);
+      const trackingUrl = `${settings.workerUrl}?id=${encodedName}`;
+      
+      document.getElementById('generatedUrl').textContent = trackingUrl;
       document.getElementById('urlResult').classList.add('show');
 
-      // 会社リストに追加
-      if (!companies.find(c => c.name === companyName)) {
-        companies.push({ name: companyName, count: 0 });
-        localStorage.setItem('kvTrackingCompanies', JSON.stringify(companies));
-        displayCompanies();
+      if (!companies.find(c => c.name === name)) {
+        companies.push({ name: name, count: 0 });
+        saveCompanies();
       }
     }
 
-    // URLをコピー
-    function copyUrl() {
-      const url = document.getElementById('generatedUrl').textContent;
-      navigator.clipboard.writeText(url).then(() => {
-        alert('URLをコピーしました!');
-      });
-    }
-
-    // カウント更新
+    // Cloudflare Workersから実際のカウントを取得
     async function loadCompanies() {
-      if (!settings.workerUrl || companies.length === 0) {
-        alert('先に会社のURLを生成してください');
-        return;
-      }
+      if (!settings.workerUrl) return alert('接続設定を確認してください');
+      if (companies.length === 0) return;
 
-      const listDiv = document.getElementById('companyList');
-      listDiv.innerHTML = '<p style="text-align: center; color: #999;">読み込み中...</p>';
+      const btn = document.querySelector('.refresh-btn');
+      btn.textContent = '読み込み中...';
 
-      // 各会社のカウントを取得
       for (let company of companies) {
         try {
-          // テスト用にURLにアクセス(実際はカウントAPIが必要)
-          const testUrl = `${settings.workerUrl}?id=${encodeURIComponent(company.name)}`;
-          // ここでは仮のカウント表示(実際のKV値取得にはAPIエンドポイントが必要)
-          company.count = Math.floor(Math.random() * 50); // デモ用ランダム値
+          // action=getCount パラメータを付けてWorkerに問い合わせ
+          const response = await fetch(`${settings.workerUrl}?action=getCount&id=${encodeURIComponent(company.name)}`);
+          if (response.ok) {
+            const count = await response.text();
+            company.count = parseInt(count) || 0;
+          }
         } catch (e) {
-          console.error('Error fetching count:', e);
+          console.error('Fetch error:', e);
         }
       }
 
+      saveCompanies();
       displayCompanies();
+      btn.textContent = '🔄 最新のカウントを取得';
     }
 
-    // 会社リスト表示
     function displayCompanies() {
       const listDiv = document.getElementById('companyList');
-      
       if (companies.length === 0) {
-        listDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">URLを生成して使用すると、ここに表示されます</p>';
+        listDiv.innerHTML = '<p style="text-align:center; color:#999;">登録済みの会社はありません</p>';
         return;
       }
 
-      listDiv.innerHTML = companies.map(company => `
+      listDiv.innerHTML = companies.map((c, index) => `
         <div class="company-item">
-          <span class="company-name">${company.name}</span>
-          <span class="count-badge">${company.count} クリック</span>
+          <span class="company-name">${c.name}</span>
+          <div>
+            <span class="count-badge">${c.count} click</span>
+            <button class="btn delete-btn" onclick="deleteCompany(${index})">削除</button>
+          </div>
         </div>
       `).join('');
     }
 
-    // ページ読み込み時
-    loadSettings();
+    function saveCompanies() {
+      localStorage.setItem('track_companies', JSON.stringify(companies));
+    }
+
+    function deleteCompany(index) {
+      if (confirm('この項目を削除しますか？（データ自体はKVに残ります）')) {
+        companies.splice(index, 1);
+        saveCompanies();
+        displayCompanies();
+      }
+    }
+
+    function copyUrl() {
+      const text = document.getElementById('generatedUrl').textContent;
+      navigator.clipboard.writeText(text).then(() => alert('コピーしました'));
+    }
+
+    init();
   </script>
 </body>
 </html>
