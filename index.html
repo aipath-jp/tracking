@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>トラッキングURL管理 (法人番号・一括登録版)</title>
+  <title>トラッキング管理 (送信数カウント機能付)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -11,35 +11,38 @@
       background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
       min-height: 100vh; padding: 20px; color: #333;
     }
-    .container { max-width: 1000px; margin: 0 auto; }
+    .container { max-width: 1100px; margin: 0 auto; }
     h1 { color: white; text-align: center; margin-bottom: 20px; font-size: 28px; }
     .card {
       background: white; border-radius: 12px; padding: 25px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 20px;
     }
     .settings { background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcd34d; }
-    .settings h3 { margin-bottom: 10px; color: #92400e; font-size: 15px; }
     input[type="text"], textarea {
       width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px;
     }
-    textarea { height: 100px; font-family: monospace; resize: vertical; }
+    textarea { height: 100px; font-family: monospace; }
     .btn {
       display: inline-block; background: #2563eb; color: white; padding: 10px 20px;
       border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s;
     }
     .btn:hover { background: #1d4ed8; }
     .btn-import { background: #059669; }
-    .btn-import:hover { background: #047857; }
-    .btn-refresh { background: #7c3aed; width: 100%; margin-bottom: 15px; font-size: 16px; }
-    .btn-delete { background: #ef4444; padding: 5px 10px; font-size: 12px; }
-    .btn-copy { background: #64748b; padding: 5px 10px; font-size: 12px; }
+    .btn-refresh { background: #7c3aed; width: 100%; margin-bottom: 15px; }
     
+    /* カウント操作ボタン */
+    .count-controls { display: flex; align-items: center; gap: 8px; }
+    .btn-mini { padding: 4px 10px; font-size: 16px; border-radius: 4px; background: #64748b; color: white; border: none; cursor: pointer; }
+    .btn-mini:hover { background: #475569; }
+    .sent-count { font-weight: bold; font-size: 18px; min-width: 30px; text-align: center; }
+
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
     th { background: #f8fafc; font-size: 13px; color: #64748b; }
-    .count-badge { background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 999px; font-weight: bold; }
-    .url-cell { font-family: monospace; font-size: 11px; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .note { font-size: 12px; color: #666; margin-top: 5px; }
+    .count-badge { background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 999px; font-weight: bold; font-size: 18px; }
+    .url-cell { font-family: monospace; font-size: 11px; color: #666; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-delete { background: #ef4444; padding: 5px 10px; font-size: 12px; }
+    .btn-copy { background: #64748b; padding: 5px 10px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -55,28 +58,26 @@
     </div>
 
     <h2>📁 スプシから一括登録</h2>
-    <p class="note">スプレッドシートの「法人番号」と「会社名」の2列をコピーして下に貼り付けてください。</p>
-    <textarea id="importArea" placeholder="1234567890123	株式会社サンプル&#10;9876543210987	有限会社テスト"></textarea>
+    <textarea id="importArea" placeholder="1234567890123	株式会社サンプル"></textarea>
     <button class="btn btn-import" onclick="importData()">リストを一括登録する</button>
   </div>
 
   <div class="card">
     <h2>📊 集計レポート</h2>
-    <button class="btn btn-refresh" id="refreshBtn" onclick="loadCounts()">🔄 全件のカウントを更新</button>
+    <button class="btn btn-refresh" id="refreshBtn" onclick="loadCounts()">🔄 クリック数を更新</button>
     
     <div style="overflow-x: auto;">
       <table>
         <thead>
           <tr>
-            <th>法人番号(ID)</th>
-            <th>会社名</th>
+            <th>会社名 / ID</th>
+            <th>送信数 (手動)</th>
             <th>クリック数</th>
             <th>配信用URL</th>
             <th>操作</th>
           </tr>
         </thead>
-        <tbody id="listBody">
-          </tbody>
+        <tbody id="listBody"></tbody>
       </table>
     </div>
   </div>
@@ -84,16 +85,15 @@
 
 <script>
   let settings = { workerUrl: '' };
-  let companies = []; // { id: '法人番号', name: '会社名', count: 0 }
+  let companies = []; // { id, name, count, sent: 0 }
 
-  // 初期化
   function init() {
-    const savedSettings = localStorage.getItem('track_settings_v2');
+    const savedSettings = localStorage.getItem('track_settings_v3');
     if (savedSettings) {
       settings = JSON.parse(savedSettings);
       document.getElementById('workerUrl').value = settings.workerUrl;
     }
-    const savedCompanies = localStorage.getItem('track_data_v2');
+    const savedCompanies = localStorage.getItem('track_data_v3');
     if (savedCompanies) {
       companies = JSON.parse(savedCompanies);
       renderTable();
@@ -102,31 +102,26 @@
 
   function saveSettings() {
     let url = document.getElementById('workerUrl').value.trim();
-    if (!url) return alert('Worker URLを入力してください');
     if (url.endsWith('/')) url = url.slice(0, -1);
     settings.workerUrl = url;
-    localStorage.setItem('track_settings_v2', JSON.stringify(settings));
+    localStorage.setItem('track_settings_v3', JSON.stringify(settings));
     alert('設定を保存しました');
     renderTable();
   }
 
-  // スプシからの貼り付け処理
   function importData() {
     const text = document.getElementById('importArea').value.trim();
-    if (!text) return alert('データを入力してください');
-
     const lines = text.split('\n');
     let addCount = 0;
 
     lines.forEach(line => {
-      const parts = line.split('\t'); // タブ区切り
+      const parts = line.split('\t');
       if (parts.length >= 2) {
         const id = parts[0].trim();
         const name = parts[1].trim();
-        
-        // 重複チェック
         if (!companies.find(c => c.id === id)) {
-          companies.push({ id, name, count: 0 });
+          // 初期値として sent: 0 を追加
+          companies.push({ id, name, count: 0, sent: 0 });
           addCount++;
         }
       }
@@ -135,14 +130,18 @@
     saveData();
     renderTable();
     document.getElementById('importArea').value = '';
-    alert(`${addCount}件の新しく登録しました。`);
+    alert(`${addCount}件登録しました。`);
   }
 
-  // Workerからカウントを取得
-  async function loadCounts() {
-    if (!settings.workerUrl) return alert('Worker設定を先に完了してください');
-    if (companies.length === 0) return;
+  // 送信数を増減させる関数
+  function updateSent(index, delta) {
+    companies[index].sent = Math.max(0, (companies[index].sent || 0) + delta);
+    saveData();
+    renderTable();
+  }
 
+  async function loadCounts() {
+    if (!settings.workerUrl) return alert('Worker設定をしてください');
     const btn = document.getElementById('refreshBtn');
     btn.disabled = true;
     btn.textContent = '読み込み中...';
@@ -151,8 +150,7 @@
       try {
         const resp = await fetch(`${settings.workerUrl}?action=getCount&id=${company.id}`);
         if (resp.ok) {
-          const val = await resp.text();
-          company.count = parseInt(val) || 0;
+          company.count = parseInt(await resp.text()) || 0;
         }
       } catch (e) { console.error(e); }
     }
@@ -160,7 +158,7 @@
     saveData();
     renderTable();
     btn.disabled = false;
-    btn.textContent = '🔄 全件のカウントを更新';
+    btn.textContent = '🔄 クリック数を更新';
   }
 
   function renderTable() {
@@ -172,12 +170,21 @@
       
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-size:12px;">${c.id}</td>
-        <td style="font-weight:bold;">${c.name}</td>
-        <td><span class="count-badge">${c.count}</span></td>
-        <td class="url-cell" title="${trackingUrl}">${trackingUrl}</td>
         <td>
-          <button class="btn btn-copy" onclick="copyText('${trackingUrl}')">URLコピー</button>
+          <div style="font-weight:bold;">${c.name}</div>
+          <div style="font-size:11px; color:#999;">${c.id}</div>
+        </td>
+        <td>
+          <div class="count-controls">
+            <button class="btn-mini" onclick="updateSent(${index}, -1)">-</button>
+            <span class="sent-count">${c.sent || 0}</span>
+            <button class="btn-mini" onclick="updateSent(${index}, 1)">+</button>
+          </div>
+        </td>
+        <td><span class="count-badge">${c.count}</span></td>
+        <td class="url-cell">${trackingUrl}</td>
+        <td>
+          <button class="btn btn-copy" onclick="copyText('${trackingUrl}')">URL</button>
           <button class="btn btn-delete" onclick="deleteItem(${index})">削除</button>
         </td>
       `;
@@ -186,11 +193,11 @@
   }
 
   function saveData() {
-    localStorage.setItem('track_data_v2', JSON.stringify(companies));
+    localStorage.setItem('track_data_v3', JSON.stringify(companies));
   }
 
   function deleteItem(index) {
-    if (confirm('リストから削除しますか？')) {
+    if (confirm('削除しますか？')) {
       companies.splice(index, 1);
       saveData();
       renderTable();
