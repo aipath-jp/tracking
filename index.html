@@ -9,36 +9,51 @@
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); min-height: 100vh; padding: 20px; color: #333; }
     .container { max-width: 1200px; margin: 0 auto; }
     
-    /* ヘッダー部分 */
     .header-area { text-align: center; margin-bottom: 25px; }
     h1 { color: white; font-size: 26px; display: inline-block; vertical-align: middle; }
     .client-name-display { color: #38bdf8; font-size: 20px; font-weight: bold; display: block; margin-top: 5px; }
 
     .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px; }
     
-    /* 設定セクション */
     .settings { background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcd34d; position: relative; }
     .settings h3 { font-size: 14px; margin-bottom: 10px; color: #92400e; }
     .id-badge { background: #fbbf24; color: #92400e; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
 
     input[type="text"], textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
-    input[readonly] { background: #f8fafc; border-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
     
-    textarea { height: 80px; font-family: monospace; }
-    .btn { display: inline-block; background: #2563eb; color: white; padding: 10px 18px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; text-decoration: none; }
-    .btn:hover { background: #1d4ed8; opacity: 0.9; }
+    .btn { display: inline-block; background: #2563eb; color: white; padding: 10px 18px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; text-decoration: none; text-align: center; }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
     .btn-import { background: #059669; }
     .btn-refresh { background: #7c3aed; flex: 2; }
     .btn-csv { background: #4b5563; margin-left: 10px; }
     .btn-danger-all { background: #dc2626; margin-left: 10px; font-size: 13px; }
+
+    /* 会社URLボタンのデザイン改善 */
+    .company-links { display: flex; gap: 6px; margin-top: 6px; }
+    .link-tag { 
+      font-size: 11px; 
+      padding: 3px 8px; 
+      border-radius: 4px; 
+      text-decoration: none; 
+      font-weight: bold; 
+      display: flex; 
+      align-items: center; 
+      gap: 3px;
+    }
+    .link-hp { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .link-hp:hover { background: #bae6fd; }
+    .link-contact { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .link-contact:hover { background: #fecaca; }
+
     .action-bar { display: flex; margin-bottom: 15px; align-items: stretch; }
-    .btn-link { background: #f1f5f9; color: #475569; font-size: 11px; padding: 4px 8px; border: 1px solid #cbd5e1; margin-top: 4px; display: inline-block; border-radius: 4px; }
     .count-controls { display: flex; align-items: center; gap: 8px; }
     .btn-mini { padding: 4px 10px; font-size: 16px; border-radius: 4px; background: #64748b; color: white; border: none; cursor: pointer; }
     .sent-count { font-weight: bold; font-size: 18px; min-width: 30px; text-align: center; }
+    
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    th { background: #f8fafc; font-size: 12px; color: #64748b; text-transform: uppercase; }
+    th { background: #f8fafc; font-size: 12px; color: #64748b; }
+    
     .count-badge { background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 999px; font-weight: bold; font-size: 18px; }
     .url-cell { font-family: monospace; font-size: 10px; color: #94a3b8; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .btn-delete { background: #ef4444; padding: 5px 10px; font-size: 12px; }
@@ -59,7 +74,7 @@
       <div style="display:flex; gap:10px;">
         <div style="flex: 2;">
           <label style="font-size: 10px; color: #92400e;">Worker URL</label>
-          <input type="text" id="workerUrl" placeholder="https://salesx.aipathcorp.com">
+          <input type="text" id="workerUrl">
         </div>
         <div style="flex: 1;">
           <label style="font-size: 10px; color: #92400e;">クライアントID</label>
@@ -101,10 +116,8 @@
 
 <script>
   // ==========================================
-  // 【重要】顧客ごとにここを書き換えて配布
-  // ==========================================
-  const CLIENT_NAME = "Aipath"; // 画面表示用
-  const CLIENT_ID   = "0";          // システム管理用 (KVのキーに使用)
+  const CLIENT_NAME = "Aipath"; 
+  const CLIENT_ID   = "0";          
   const WORKER_URL  = "https://salesx.aipathcorp.com";
 
   let settings = { 
@@ -115,15 +128,12 @@
   let companies = [];
 
   function init() {
-    // 画面表示の適用
     document.getElementById('displayClientName').textContent = settings.clientName;
     document.getElementById('idLabel').textContent = `ID: ${settings.clientId}`;
     document.getElementById('workerUrl').value = settings.workerUrl;
     document.getElementById('clientIdInput').value = settings.clientId;
 
-    const storageKey = `track_data_${settings.clientId}`;
-    const savedCompanies = localStorage.getItem(storageKey);
-    
+    const savedCompanies = localStorage.getItem(`track_data_${settings.clientId}`);
     if (savedCompanies) {
       companies = JSON.parse(savedCompanies);
       renderTable();
@@ -149,9 +159,10 @@
       if (parts.length >= 2) {
         const id = parts[0].trim();
         const name = parts[1].trim();
+        const hpUrl = parts[2] ? parts[2].trim() : '';
         const contactUrl = parts[3] ? parts[3].trim() : '';
         if (!companies.find(c => c.id === id)) {
-          companies.push({ id, name, contactUrl, count: 0, sent: 0 });
+          companies.push({ id, name, hpUrl, contactUrl, count: 0, sent: 0 });
           addCount++;
         }
       }
@@ -183,9 +194,20 @@
     body.innerHTML = '';
     companies.forEach((c, index) => {
       const trackingUrl = `${settings.workerUrl}?id=${c.id}&C=${settings.clientId}`;
+      
+      // ボタン形式のURLリンク作成
+      let linkHtml = '<div class="company-links">';
+      if (c.hpUrl) linkHtml += `<a href="${c.hpUrl}" target="_blank" class="link-tag link-hp"><span>問い合わせURL</a>`;
+      if (c.contactUrl) linkHtml += `<a href="${c.contactUrl}" target="_blank" class="link-tag link-contact"><span>📩</span> お問合せ</a>`;
+      linkHtml += '</div>';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><b>${c.name}</b><br><small style="color:#64748b;">ID: ${c.id}</small></td>
+        <td>
+          <div style="font-weight:bold; font-size:15px;">${c.name}</div>
+          ${linkHtml}
+          <div style="font-size:10px; color:#94a3b8; margin-top:4px;">ID: ${c.id}</div>
+        </td>
         <td>
           <div class="count-controls">
             <button class="btn-mini" onclick="updateSent(${index},-1)">-</button>
@@ -207,8 +229,32 @@
   function updateSent(i, d) { companies[i].sent = Math.max(0, (companies[i].sent||0)+d); saveData(); renderTable(); }
   function saveData() { localStorage.setItem(`track_data_${settings.clientId}`, JSON.stringify(companies)); }
   function deleteItem(i) { if(confirm('削除しますか？')){ companies.splice(i,1); saveData(); renderTable(); } }
+
+  // 全削除ボタンの機能を実装
+  function deleteAllCompanies() {
+    if (confirm('【注意】リストをすべて削除します。よろしいですか？')) {
+      companies = [];
+      saveData();
+      renderTable();
+    }
+  }
+
   function copyText(t) { navigator.clipboard.writeText(t).then(()=>alert('配信用URLをコピーしました')); }
-  function downloadCSV() { /* CSVロジック */ }
+  
+  function downloadCSV() {
+    if (!companies.length) return alert('データがありません');
+    let csv = "\ufeff法人番号,会社名,HP,お問い合わせURL,送信数,クリック数\n";
+    companies.forEach(c => {
+      csv += `"${c.id}","${c.name}","${c.hpUrl}","${c.contactUrl}",${c.sent},${c.count}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "tracking_list.csv";
+    link.click();
+  }
+
   init();
 </script>
 </body>
