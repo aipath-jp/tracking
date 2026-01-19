@@ -27,6 +27,21 @@
     .btn-refresh { background: #7c3aed; flex: 2; }
     .btn-csv { background: #4b5563; margin-left: 10px; }
     .btn-danger-all { background: #dc2626; margin-left: 10px; font-size: 13px; }
+    
+    /* 送信ステータスボタン */
+    .status-btn { 
+      padding: 6px 12px; 
+      border-radius: 20px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: bold; 
+      font-size: 12px;
+      transition: 0.3s;
+      width: 80px;
+    }
+    .status-unsent { background: #e2e8f0; color: #64748b; }
+    .status-sent { background: #2563eb; color: white; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
+
 
     /* 会社URLボタンのデザイン改善 */
     .company-links { display: flex; gap: 6px; margin-top: 6px; }
@@ -84,9 +99,9 @@
       <button class="btn" onclick="saveSettings()">設定を保存</button>
     </div>
 
-    <h2>📁 スプシからリスト登録</h2>
-    <p style="font-size:12px; color:#666; margin-bottom:5px;">法人番号 / 会社名 / HP / お問い合わせURL の4列を貼り付け</p>
-    <textarea id="importArea" placeholder="2430001012288	ナトリ株式会社	http://...	http://.../contact"></textarea>
+    <h2>📁 リスト登録</h2>
+    <p style="font-size:12px; color:#666; margin-bottom:5px;">法人番号 / 会社名 /  お問い合わせURL の3列を貼り付け</p>
+    <textarea id="importArea" placeholder="2430001012288	XXX株式会社	http://.../contact"></textarea>
     <button class="btn btn-import" onclick="importData()">リストを一括登録する</button>
   </div>
 
@@ -195,11 +210,24 @@
     companies.forEach((c, index) => {
       const trackingUrl = `${settings.workerUrl}?id=${c.id}&C=${settings.clientId}`;
       
-      // ボタン形式のURLリンク作成
       let linkHtml = '<div class="company-links">';
-      if (c.hpUrl) linkHtml += `<a href="${c.hpUrl}" target="_blank" class="link-tag link-hp"><span>問い合わせURL</a>`;
+      if (c.hpUrl) linkHtml += `<a href="${c.hpUrl}" target="_blank" class="link-tag link-hp">問い合わせURL</a>`;
       if (c.contactUrl) linkHtml += `<a href="${c.contactUrl}" target="_blank" class="link-tag link-contact"><span>📩</span> お問合せ</a>`;
       linkHtml += '</div>';
+
+      const isSent = c.sent === 1;
+      const statusClass = isSent ? 'status-sent' : 'status-unsent';
+      const statusText = isSent ? '送信済み' : '未送信';
+      
+      // ボタン無効化の条件: 
+      // 1. コピーしていない、かつ未送信の場合 (ロック中)
+      // 2. もしくは、すでに送信済みの場合 (変更不可)
+      const isDisabled = (!c.canSend && !isSent) || isSent;
+      
+      // 送信済みの場合は「完了感」を出すために少し薄くするなどの調整も可能ですが、
+      // ここではクリック不可であることを明確にするスタイルにしています
+      const statusStyle = isDisabled ? 'cursor: not-allowed;' : 'cursor: pointer;';
+      const opacityStyle = (!c.canSend && !isSent) ? 'opacity: 0.4;' : 'opacity: 1;';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -209,16 +237,18 @@
           <div style="font-size:10px; color:#94a3b8; margin-top:4px;">ID: ${c.id}</div>
         </td>
         <td>
-          <div class="count-controls">
-            <button class="btn-mini" onclick="updateSent(${index},-1)">-</button>
-            <span class="sent-count">${c.sent || 0}</span>
-            <button class="btn-mini" onclick="updateSent(${index},1)">+</button>
-          </div>
+          <button 
+            class="status-btn ${statusClass}" 
+            onclick="toggleStatus(${index})" 
+            ${isDisabled ? 'disabled' : ''} 
+            style="${statusStyle} ${opacityStyle}">
+            ${statusText}
+          </button>
         </td>
         <td><span class="count-badge">${c.count}</span></td>
         <td class="url-cell" title="${trackingUrl}">${trackingUrl}</td>
         <td>
-          <button class="btn btn-copy" onclick="copyText('${trackingUrl}')">コピー</button>
+          <button class="btn btn-copy" onclick="copyText(this, '${trackingUrl}', ${index})">コピー</button>
           <button class="btn btn-delete" onclick="deleteItem(${index})">削除</button>
         </td>
       `;
@@ -226,11 +256,23 @@
     });
   }
 
-  function updateSent(i, d) { companies[i].sent = Math.max(0, (companies[i].sent||0)+d); saveData(); renderTable(); }
-  function saveData() { localStorage.setItem(`track_data_${settings.clientId}`, JSON.stringify(companies)); }
-  function deleteItem(i) { if(confirm('削除しますか？')){ companies.splice(i,1); saveData(); renderTable(); } }
+  // ステータスを「送信済み」にする。一度送信済みにしたら戻せない。
+  function toggleStatus(i) {
+    if (companies[i].sent === 0) {
+      companies[i].sent = 1;
+      saveData();
+      renderTable();
+    }
+  }
 
-  // 全削除ボタンの機能を実装
+  function saveData() { localStorage.setItem(`track_data_${settings.clientId}`, JSON.stringify(companies)); }
+  
+  function deleteItem(i) {
+    companies.splice(i,1); 
+    saveData(); 
+    renderTable(); 
+  }
+
   function deleteAllCompanies() {
     if (confirm('【注意】リストをすべて削除します。よろしいですか？')) {
       companies = [];
@@ -239,13 +281,29 @@
     }
   }
 
-  function copyText(t) { navigator.clipboard.writeText(t).then(()=>alert('配信用URLをコピーしました')); }
+  function copyText(btn, t, index) { 
+    navigator.clipboard.writeText(t).then(() => {
+      companies[index].canSend = true;
+      saveData();
+      
+      const originalText = btn.textContent;
+      btn.textContent = '完了!';
+      btn.style.background = '#10b981';
+      
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        renderTable(); 
+      }, 500);
+    }); 
+  }
   
   function downloadCSV() {
     if (!companies.length) return alert('データがありません');
-    let csv = "\ufeff法人番号,会社名,HP,お問い合わせURL,送信数,クリック数\n";
+    let csv = "\ufeff法人番号,会社名,HP,お問い合わせURL,送信ステータス,クリック数\n";
     companies.forEach(c => {
-      csv += `"${c.id}","${c.name}","${c.hpUrl}","${c.contactUrl}",${c.sent},${c.count}\n`;
+      const status = c.sent === 1 ? "送信済み" : "未送信";
+      csv += `"${c.id}","${c.name}","${c.hpUrl}","${c.contactUrl}","${status}",${c.count}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
