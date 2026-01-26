@@ -230,12 +230,11 @@
  
   function saveData() { localStorage.setItem(`track_data_${settings.clientId}`, JSON.stringify(companies)); }
   
-  function deleteItem(i) {
-    if(confirm('削除しますか？')) {
-      companies.splice(i,1); 
-      saveData(); 
-      renderTable(); 
-    }
+function deleteItem(i) {
+    // confirmを消して中身だけにすれば、即座に削除されます
+    companies.splice(i, 1); 
+    saveData(); 
+    renderTable(); 
   }
  
   function deleteAllCompanies() {
