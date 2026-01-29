@@ -11,13 +11,11 @@
     
     .header-area { text-align: center; margin-bottom: 25px; }
     h1 { color: white; font-size: 26px; display: inline-block; vertical-align: middle; }
-    .client-name-display { color: #38bdf8; font-size: 20px; font-weight: bold; display: block; margin-top: 5px; }
  
     .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px; }
     
     .settings { background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcd34d; position: relative; }
     .settings h3 { font-size: 14px; margin-bottom: 10px; color: #92400e; }
-    .id-badge { background: #fbbf24; color: #92400e; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
  
     input[type="text"], textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
     
@@ -60,22 +58,13 @@
 <div class="container">
   <div class="header-area">
     <h1>🚀 SalesX Tracking Dashboard</h1>
-    <div id="displayClientName" class="client-name-display">Loading...</div>
   </div>
  
   <div class="card">
     <div class="settings">
-      <h3>⚙️ 接続設定 <span id="idLabel" class="id-badge"></span></h3>
-      <div style="display:flex; gap:10px;">
-        <div style="flex: 2;">
-          <label style="font-size: 10px; color: #92400e;">Worker URL</label>
-          <input type="text" id="workerUrl">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 10px; color: #92400e;">クライアントID</label>
-          <input type="text" id="clientIdInput" readonly>
-        </div>
-      </div>
+      <h3>⚙️ 接続設定</h3>
+      <label style="font-size: 10px; color: #92400e;">Worker URL</label>
+      <input type="text" id="workerUrl">
       <button class="btn" onclick="saveSettings()">設定を保存</button>
     </div>
  
@@ -110,25 +99,19 @@
 </div>
  
 <script>
-  // === クライアント設定は維持 ===
-  const CLIENT_NAME = "Meta-ADX"; 
-  const CLIENT_ID   = "0";          
-  const WORKER_URL  = "https://meta-adx.aipathcorp.com/";
+  const WORKER_URL = "https://meta-adx.aipathcorp.com/";
  
-  let settings = { 
-    workerUrl: WORKER_URL, 
-    clientId: CLIENT_ID, 
-    clientName: CLIENT_NAME 
-  };
+  let settings = { workerUrl: WORKER_URL };
   let companies = [];
  
   function init() {
-    document.getElementById('displayClientName').textContent = settings.clientName;
-    document.getElementById('idLabel').textContent = `ID: ${settings.clientId}`;
+    const savedSettings = localStorage.getItem('track_settings');
+    if (savedSettings) {
+      settings = JSON.parse(savedSettings);
+    }
     document.getElementById('workerUrl').value = settings.workerUrl;
-    document.getElementById('clientIdInput').value = settings.clientId;
  
-    const savedCompanies = localStorage.getItem(`track_data_${settings.clientId}`);
+    const savedCompanies = localStorage.getItem('track_data');
     if (savedCompanies) {
       companies = JSON.parse(savedCompanies);
       renderTable();
@@ -139,7 +122,7 @@
     let url = document.getElementById('workerUrl').value.trim();
     if (url.endsWith('/')) url = url.slice(0, -1);
     settings.workerUrl = url;
-    localStorage.setItem(`track_settings_${settings.clientId}`, JSON.stringify(settings));
+    localStorage.setItem('track_settings', JSON.stringify(settings));
     alert('設定を保存しました');
     renderTable();
   }
@@ -154,7 +137,6 @@
       if (parts.length >= 2) {
         const id = parts[0].trim();
         const name = parts[1].trim();
-        // 3列目にお問い合わせURLがある前提
         const contactUrl = parts[2] ? parts[2].trim() : '';
         if (!companies.find(c => c.id === id)) {
           companies.push({ id, name, contactUrl, count: 0, sent: 0, canSend: false });
@@ -174,7 +156,7 @@
     btn.textContent = '同期中...';
     for (let company of companies) {
       try {
-        const resp = await fetch(`${settings.workerUrl}?action=getCount&id=${company.id}&C=${settings.clientId}`);
+        const resp = await fetch(`${settings.workerUrl}?action=getCount&id=${company.id}`);
         if (resp.ok) company.count = parseInt(await resp.text()) || 0;
       } catch (e) { console.error(e); }
     }
@@ -188,7 +170,7 @@
     const body = document.getElementById('listBody');
     body.innerHTML = '';
     companies.forEach((c, index) => {
-      const trackingUrl = `${settings.workerUrl}?id=${c.id}&C=${settings.clientId}`;
+      const trackingUrl = `${settings.workerUrl}?id=${c.id}`;
       const isSent = c.sent === 1;
       
       const tr = document.createElement('tr');
@@ -228,17 +210,18 @@
     }
   }
  
-  function saveData() { localStorage.setItem(`track_data_${settings.clientId}`, JSON.stringify(companies)); }
+  function saveData() { 
+    localStorage.setItem('track_data', JSON.stringify(companies)); 
+  }
   
-function deleteItem(i) {
-    // confirmを消して中身だけにすれば、即座に削除されます
+  function deleteItem(i) {
     companies.splice(i, 1); 
     saveData(); 
     renderTable(); 
   }
  
   function deleteAllCompanies() {
-    if (confirm('全削除しますか？')) {
+    if (confirm('全削除しますか?')) {
       companies = [];
       saveData();
       renderTable();
@@ -269,7 +252,7 @@ function deleteItem(i) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `tracking_list_${settings.clientId}.csv`;
+    link.download = 'tracking_list.csv';
     link.click();
   }
  
